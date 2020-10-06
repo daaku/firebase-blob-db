@@ -177,6 +177,7 @@ export class FirebaseBlobDB {
             ...pending,
             state: result.state,
           });
+          state = result.state;
         }
       }
     }
