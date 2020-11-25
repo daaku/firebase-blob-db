@@ -1,8 +1,8 @@
 import {
+  downloadURL,
   FirebaseStorageClient,
   FirebaseUploadMetadata,
   FirebaseUploadState,
-  downloadURL,
 } from '@daaku/firebase-storage';
 import type { IDBPDatabase } from 'idb';
 

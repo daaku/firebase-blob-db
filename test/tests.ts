@@ -1,8 +1,9 @@
 import { Auth } from '@daaku/firebase-auth';
-import { customAlphabet } from 'nanoid/index.js';
-import { openDB, deleteDB, IDBPDatabase } from 'idb';
 import { FirebaseStorageClient } from '@daaku/firebase-storage';
-import { FirebaseBlobDB, ErrorEvent, CompleteEvent } from '../src';
+import { deleteDB, IDBPDatabase, openDB } from 'idb';
+import { customAlphabet } from 'nanoid/index.js';
+
+import { CompleteEvent, ErrorEvent, FirebaseBlobDB } from '../src';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstvwxyz', 16);
 
