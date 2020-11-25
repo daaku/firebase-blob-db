@@ -1,7 +1,7 @@
 {
   "name": "@daaku/firebase-blob-db",
   "author": "Naitik Shah <n@daaku.org>",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Resilient uploading of blobs to Firebase Storage.",
   "repository": "git@github.com:daaku/firebase-blob-db",
   "main": "dist/src/index.js",
@@ -35,7 +35,7 @@
     "typescript": "^4.1.2"
   },
   "dependencies": {
-    "@daaku/firebase-storage": "^0.1.2",
+    "@daaku/firebase-storage": "^0.2.0",
     "idb": "^5.0.7"
   }
 }
