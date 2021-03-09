@@ -1,7 +1,7 @@
 import { Auth } from '@daaku/firebase-auth';
 import { FirebaseStorageClient } from '@daaku/firebase-storage';
 import { deleteDB, IDBPDatabase, openDB } from 'idb';
-import { customAlphabet } from 'nanoid/index.js';
+import { customAlphabet } from 'nanoid';
 
 import { CompleteEvent, ErrorEvent, FirebaseBlobDB } from '../src';
 
