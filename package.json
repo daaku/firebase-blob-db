@@ -4,9 +4,18 @@
   "version": "1.2.0",
   "description": "Resilient uploading of blobs to Firebase Storage.",
   "repository": "git@github.com:daaku/firebase-blob-db",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
+  "license": "MIT",
   "prettier": "prettier-config-daaku",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    }
+  },
+  "eslintConfig": {
+    "extends": "@daaku"
+  },
   "scripts": {
     "check:types": "tsc --noEmit",
     "check:lint": "eslint --fix --ignore-pattern dist .",
@@ -21,10 +30,9 @@
     "firebase",
     "api"
   ],
-  "license": "MIT",
   "devDependencies": {
     "@daaku/eslint-config": "^4.0.0",
-    "@daaku/firebase-auth": "^1.1.0",
+    "@daaku/firebase-auth": "^2.2.0",
     "@daaku/qunit-puppeteer": "^2.0.0",
     "@types/qunit": "^2.11.2",
     "esbuild": "^0.14.0",
@@ -36,7 +44,7 @@
     "typescript": "^4.4.4"
   },
   "dependencies": {
-    "@daaku/firebase-storage": "^1.1.0",
-    "idb": "^7.0.0"
+    "@daaku/firebase-storage": "^2.0.0",
+    "idb": "^7.0.2"
   }
 }

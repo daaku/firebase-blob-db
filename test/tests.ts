@@ -3,7 +3,7 @@ import { FirebaseStorageClient } from '@daaku/firebase-storage';
 import { deleteDB, IDBPDatabase, openDB } from 'idb';
 import { customAlphabet } from 'nanoid';
 
-import { CompleteEvent, ErrorEvent, FirebaseBlobDB } from '../src';
+import { CompleteEvent, ErrorEvent, FirebaseBlobDB } from '../src/index.js';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstvwxyz', 16);
 
