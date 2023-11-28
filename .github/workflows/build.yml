@@ -13,4 +13,4 @@ jobs:
       - name: Dependencies
         run: npm install
       - name: Test
-        run: npm run cover
+        run: npm run test
