@@ -3,158 +3,158 @@ import {
   FirebaseStorageClient,
   FirebaseUploadMetadata,
   FirebaseUploadState,
-} from '@daaku/firebase-storage';
-import type { IDBPDatabase } from 'idb';
+} from '@daaku/firebase-storage'
+import type { IDBPDatabase } from 'idb'
 
 export interface ErrorEvent {
-  path: string;
-  error: unknown;
+  path: string
+  error: unknown
 }
 
 export interface CompleteEvent {
-  path: string;
+  path: string
 }
 
 interface Existing {
-  path: string;
-  downloadURL: string;
+  path: string
+  downloadURL: string
 }
 
 interface PendingUpload {
-  path: string;
-  action: 'upload';
-  metadata: FirebaseUploadMetadata;
-  state?: FirebaseUploadState;
+  path: string
+  action: 'upload'
+  metadata: FirebaseUploadMetadata
+  state?: FirebaseUploadState
 }
 
 interface PendingDelete {
-  path: string;
-  action: 'delete';
+  path: string
+  action: 'delete'
 }
 
-type Pending = PendingUpload | PendingDelete;
+type Pending = PendingUpload | PendingDelete
 
 // Config to initialize a FirebaseBlobDB.
 export interface FirebaseBlobDBConfig {
-  client: FirebaseStorageClient;
-  onError: (ev: ErrorEvent) => void;
-  onComplete: (ev: CompleteEvent) => void;
-  blobInfoStoreName?: string;
-  blobCacheStoreName?: string;
-  blobQueueStoreName?: string;
+  client: FirebaseStorageClient
+  onError: (ev: ErrorEvent) => void
+  onComplete: (ev: CompleteEvent) => void
+  blobInfoStoreName?: string
+  blobCacheStoreName?: string
+  blobQueueStoreName?: string
 }
 
 // Resilient uploading of blobs to Firebase Storage.
 export class FirebaseBlobDB {
-  private db!: IDBPDatabase;
-  private client: FirebaseStorageClient;
-  private onError: (ev: ErrorEvent) => void;
-  private onComplete: (ev: CompleteEvent) => void;
-  private blobInfoStoreName: string;
-  private blobCacheStoreName: string;
-  private blobQueueStoreName: string;
-  private running = false;
+  private db!: IDBPDatabase
+  private client: FirebaseStorageClient
+  private onError: (ev: ErrorEvent) => void
+  private onComplete: (ev: CompleteEvent) => void
+  private blobInfoStoreName: string
+  private blobCacheStoreName: string
+  private blobQueueStoreName: string
+  private running = false
 
   constructor(config: FirebaseBlobDBConfig) {
-    this.client = config.client;
-    this.onError = config.onError;
-    this.onComplete = config.onComplete;
-    this.blobInfoStoreName = config.blobInfoStoreName ?? 'blob_info';
-    this.blobCacheStoreName = config.blobCacheStoreName ?? 'blob_cache';
-    this.blobQueueStoreName = config.blobQueueStoreName ?? 'blob_queue';
+    this.client = config.client
+    this.onError = config.onError
+    this.onComplete = config.onComplete
+    this.blobInfoStoreName = config.blobInfoStoreName ?? 'blob_info'
+    this.blobCacheStoreName = config.blobCacheStoreName ?? 'blob_cache'
+    this.blobQueueStoreName = config.blobQueueStoreName ?? 'blob_queue'
   }
 
   // Call this in your upgradeDB transaction.
   public upgradeDB(db: IDBPDatabase): void {
-    [this.blobInfoStoreName, this.blobQueueStoreName].forEach((name) => {
+    ;[this.blobInfoStoreName, this.blobQueueStoreName].forEach(name => {
       if (!db.objectStoreNames.contains(name)) {
-        db.createObjectStore(name, { keyPath: 'path' });
+        db.createObjectStore(name, { keyPath: 'path' })
       }
-    });
+    })
 
     // this one stores blobs directly
     if (!db.objectStoreNames.contains(this.blobCacheStoreName)) {
-      db.createObjectStore(this.blobCacheStoreName);
+      db.createObjectStore(this.blobCacheStoreName)
     }
   }
 
   // This should be called with the initialized DB before you begin using the
   // instance.
   public setDB(db: IDBPDatabase): void {
-    this.db = db;
-    this.run();
+    this.db = db
+    this.run()
   }
 
   private async run(): Promise<void> {
     if (this.running) {
-      return;
+      return
     }
-    this.running = true;
+    this.running = true
     while (true) {
       const pending = (await this.db.getAll(
         this.blobQueueStoreName,
         undefined,
         1,
-      )) as Pending[];
+      )) as Pending[]
       if (pending.length === 0) {
-        break;
+        break
       }
       try {
-        await this.runPending(pending[0]);
+        await this.runPending(pending[0])
       } catch (err) {
         // TODO: handle errors correctly
         this.onError({
           path: pending[0].path,
           error: err,
-        });
+        })
         // TODO: schedule a retry? delete the offending item? something?
-        break;
+        break
       }
     }
-    this.running = false;
+    this.running = false
   }
 
   private async runPending(pending: Pending): Promise<void> {
     if (pending.action === 'delete') {
-      await this.client.delete(pending.path);
-      await this.db.delete(this.blobQueueStoreName, pending.path);
-      return;
+      await this.client.delete(pending.path)
+      await this.db.delete(this.blobQueueStoreName, pending.path)
+      return
     }
 
     if (pending.action === 'upload') {
       const blob = (await this.db.get(
         this.blobCacheStoreName,
         pending.path,
-      )) as Blob;
+      )) as Blob
 
-      let state: FirebaseUploadState;
+      let state: FirebaseUploadState
       if (pending.state) {
-        state = pending.state;
+        state = pending.state
       } else {
         // start a new upload
         state = await this.client.uploadStart(
           pending.path,
           blob,
           pending.metadata,
-        );
+        )
         // store the state so we can resume it later if needed
         await this.db.put(this.blobQueueStoreName, {
           ...pending,
           state,
-        });
+        })
       }
 
       // finish uploading this blob if we can
       while (true) {
         // we have at least one more chunk to upload
-        const result = await this.client.uploadChunk(state, blob);
+        const result = await this.client.uploadChunk(state, blob)
 
         // successfully uploaded last chunk, we're done with this upload
         if (result.type === 'finish') {
           const cache: Existing = {
             path: pending.path,
             downloadURL: downloadURL(result.metadata),
-          };
+          }
           const t = this.db.transaction(
             [
               this.blobCacheStoreName,
@@ -162,13 +162,13 @@ export class FirebaseBlobDB {
               this.blobInfoStoreName,
             ],
             'readwrite',
-          );
-          await t.objectStore(this.blobInfoStoreName).put(cache);
-          await t.objectStore(this.blobQueueStoreName).delete(pending.path);
-          await t.objectStore(this.blobCacheStoreName).delete(pending.path);
-          await t.done;
-          this.onComplete({ path: pending.path });
-          return;
+          )
+          await t.objectStore(this.blobInfoStoreName).put(cache)
+          await t.objectStore(this.blobQueueStoreName).delete(pending.path)
+          await t.objectStore(this.blobCacheStoreName).delete(pending.path)
+          await t.done
+          this.onComplete({ path: pending.path })
+          return
         }
 
         // successfully uploaded one chunk, store our progress and continue the loop
@@ -176,13 +176,13 @@ export class FirebaseBlobDB {
           await this.db.put(this.blobQueueStoreName, {
             ...pending,
             state: result.state,
-          });
-          state = result.state;
+          })
+          state = result.state
         }
       }
     }
 
-    throw new Error('unreachable');
+    throw new Error('unreachable')
   }
 
   // Upload schedules uploading of the blob to the path at a later time.
@@ -195,21 +195,21 @@ export class FirebaseBlobDB {
     blob: Blob,
     metadata: FirebaseUploadMetadata = {},
   ): Promise<string> {
-    const pending: PendingUpload = { action: 'upload', path, metadata };
+    const pending: PendingUpload = { action: 'upload', path, metadata }
     const t = this.db.transaction(
       [this.blobCacheStoreName, this.blobQueueStoreName],
       'readwrite',
-    );
-    await t.objectStore(this.blobCacheStoreName).put(blob, path);
-    await t.objectStore(this.blobQueueStoreName).put(pending);
-    await t.done;
-    this.run();
-    return URL.createObjectURL(blob);
+    )
+    await t.objectStore(this.blobCacheStoreName).put(blob, path)
+    await t.objectStore(this.blobQueueStoreName).put(pending)
+    await t.done
+    this.run()
+    return URL.createObjectURL(blob)
   }
 
   // Delete a path locally and in Firebase.
   public async delete(path: string): Promise<void> {
-    const pending: PendingDelete = { action: 'delete', path };
+    const pending: PendingDelete = { action: 'delete', path }
     const t = this.db.transaction(
       [
         this.blobCacheStoreName,
@@ -217,36 +217,36 @@ export class FirebaseBlobDB {
         this.blobQueueStoreName,
       ],
       'readwrite',
-    );
-    await t.objectStore(this.blobCacheStoreName).delete(path);
-    await t.objectStore(this.blobInfoStoreName).delete(path);
-    await t.objectStore(this.blobQueueStoreName).put(pending);
-    await t.done;
-    this.run();
+    )
+    await t.objectStore(this.blobCacheStoreName).delete(path)
+    await t.objectStore(this.blobInfoStoreName).delete(path)
+    await t.objectStore(this.blobQueueStoreName).put(pending)
+    await t.done
+    this.run()
   }
 
   // Get the downloadURL for the path from our local cache, or pending upload,
   // or a blob stored in Firebase.
   public async downloadURL(path: string): Promise<string> {
     // check if we have it in cache
-    const blob = (await this.db.get(this.blobCacheStoreName, path)) as Blob;
+    const blob = (await this.db.get(this.blobCacheStoreName, path)) as Blob
     if (blob) {
-      return URL.createObjectURL(blob);
+      return URL.createObjectURL(blob)
     }
 
     // check if we have the downloadURL
     const existing = (await this.db.get(
       this.blobInfoStoreName,
       path,
-    )) as Existing;
+    )) as Existing
     if (existing) {
-      return existing.downloadURL;
+      return existing.downloadURL
     }
 
     // fetch and cache downloadURL
-    const downloadURL = await this.client.downloadURL(path);
-    const cache: Existing = { path, downloadURL };
-    await this.db.put(this.blobInfoStoreName, cache);
-    return downloadURL;
+    const downloadURL = await this.client.downloadURL(path)
+    const cache: Existing = { path, downloadURL }
+    await this.db.put(this.blobInfoStoreName, cache)
+    return downloadURL
   }
 }
