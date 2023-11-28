@@ -1,9 +1,13 @@
+import QUnit from 'qunit';
+import 'qunit/qunit/qunit.css';
 import { Auth } from '@daaku/firebase-auth';
 import { FirebaseStorageClient } from '@daaku/firebase-storage';
 import { deleteDB, IDBPDatabase, openDB } from 'idb';
 import { customAlphabet } from 'nanoid';
-
 import { CompleteEvent, ErrorEvent, FirebaseBlobDB } from '../src/index.js';
+
+// @ts-ignore
+window.HARNESS_RUN_END && QUnit.on('runEnd', window.HARNESS_RUN_END);
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstvwxyz', 16);
 
