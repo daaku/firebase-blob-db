@@ -7,10 +7,7 @@
   "license": "MIT",
   "type": "module",
   "exports": {
-    ".": {
-      "import": "./dist/src/index.js",
-      "types": "./dist/src/index.d.ts"
-    }
+    ".": { "import": "./dist/src/index.js", "types": "./dist/src/index.d.ts" }
   },
   "prettier": {
     "arrowParens": "avoid",
@@ -20,25 +17,18 @@
   },
   "scripts": {
     "test": "vite build && TIMEOUT=30000 qunit-puppeteer",
-    "deploy": "npm run test && npm publish --access=public",
     "prepare": "tsc",
     "dev": "vite"
   },
-  "keywords": [
-    "firebase",
-    "api"
-  ],
+  "keywords": ["firebase", "api"],
   "devDependencies": {
-    "@daaku/firebase-auth": "^2.2.0",
-    "@daaku/qunit-puppeteer": "^4.0.0",
-    "@types/qunit": "^2.11.2",
-    "nanoid": "^5.0.1",
-    "qunit": "^2.17.2",
-    "typescript": "^5.0.2",
-    "vite": "^8.0.0"
+    "@daaku/firebase-auth": "^2.7.0",
+    "@daaku/qunit-puppeteer": "^4.1.0",
+    "@types/qunit": "^2.19.13",
+    "nanoid": "^5.1.7",
+    "qunit": "^2.25.0",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.3"
   },
-  "dependencies": {
-    "@daaku/firebase-storage": "^2.0.0",
-    "idb": "^8.0.0"
-  }
+  "dependencies": { "@daaku/firebase-storage": "^2.2.0", "idb": "^8.0.3" }
 }
